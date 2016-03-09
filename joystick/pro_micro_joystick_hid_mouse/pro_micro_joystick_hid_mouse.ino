@@ -4,7 +4,25 @@
 /* Analog joystick to HID mouse example for the Pro Micro board
  * from  https://learn.sparkfun.com/tutorials/pro-micro--fio-v3-hookup-guide/example-2-hid-mouse-and-keyboard
  * 
- * Hacked by Fredrik Jansson 2016
+ * Hacked for use with a Game Port Joystick by Fredrik Jansson 2016
+ * 
+ * Connections:
+ *
+ * Game port     Pro Micro
+ * 1   Vcc          Vcc
+ * 2   Button1       9
+ * 3   X axis       A0   ---100K--- GND  
+ * 4   GND          GND
+ * 5   
+ * 6   Y axis       A1   ---100K--- GND
+ * 7   Button2
+ * 8
+ * 9
+ * 10  Button4 
+ * 11  X2 - unused??
+ * 12
+ * 13  Y2 - for hat
+ * 14  Button3
  */
 
 /* HID Joystick Mouse Example
@@ -27,7 +45,7 @@ int selPin = 9;  // select button pin of joystick
 
 int vertZero, horzZero;  // Stores the initial value of each axis, usually around 512
 int vertValue, horzValue;  // Stores current analog output of each axis
-const int sensitivity = 200;  // Higher sensitivity value = slower mouse, should be <= about 500
+const int sensitivity = 20;  // Higher sensitivity value = slower mouse, should be <= about 500
 int mouseClickFlag = 0;
 
 void setup()
@@ -44,8 +62,8 @@ void setup()
 
 void loop()
 {
-  vertValue = analogRead(vertPin) - vertZero;  // read vertical offset
-  horzValue = analogRead(horzPin) - horzZero;  // read horizontal offset
+  vertValue = -(analogRead(vertPin) - vertZero);  // read vertical offset
+  horzValue = -(analogRead(horzPin) - horzZero);  // read horizontal offset
 
   if (vertValue != 0)
     Mouse.move(0, vertValue/sensitivity, 0);  // move mouse on y axis
