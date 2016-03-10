@@ -3,8 +3,12 @@
  * 
  * using HID-Project library, https://github.com/NicoHood/HID
  * parts from  https://learn.sparkfun.com/tutorials/pro-micro--fio-v3-hookup-guide/example-2-hid-mouse-and-keyboard
+ * hat switches: https://davenunez.wordpress.com/2014/02/22/reading-hat-switches-on-pc-gameport-joysticks/
+ *               http://www.descent2.com/sickone/analogjoystick.html
  * 
  * Connections:
+ * 
+ * 
  *
  * Game port     Pro Micro
  * 1   Vcc          Vcc
@@ -19,7 +23,7 @@
  * 10  Button4 
  * 11  X2 - unused??
  * 12
- * 13  Y2 - for hat
+ * 13  Y2 - for hat  A2   ---100K--- GND
  * 14  Button3
  */
 /*
@@ -119,13 +123,40 @@ void loop()
   Gamepad.buttons(b);
   
   
-  // Hat. Some joystics encode the 4 switches with different analog values of y2.
+  // Hat. Some (i.e. our) joystics encode the 4 hat switches with different analog values on axis y2.
   uint8_t dpad1 = GAMEPAD_DPAD_CENTERED;
   int hat = analogRead(y2pin);
-  Serial.print(hat);
-  Serial.print("\n");
+  //Serial.print(hat);
+  //Serial.print("\n");
+
+  // dir   observed ADC
+  // up    1014    threshold
+  //             926
+  // right  838
+  //             775
+  // down   712
+  //             667
+  // left   622
+  //             586
+  // center 550 
+
+  if (hat > 775)
+  {
+    if (hat > 926)
+      dpad1 = GAMEPAD_DPAD_UP;
+    else
+      dpad1 = GAMEPAD_DPAD_RIGHT;
+  }
+  else // <= 775
+  {
+    if (hat > 667)
+      dpad1 = GAMEPAD_DPAD_DOWN;  
+    else if (hat > 586)
+      dpad1 = GAMEPAD_DPAD_LEFT;
+  }
   
   Gamepad.dPad1(dpad1); 
+   
     
   Gamepad.write();  
   delay(5);
