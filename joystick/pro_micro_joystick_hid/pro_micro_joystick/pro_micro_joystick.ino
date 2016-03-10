@@ -38,19 +38,24 @@
 
 #include "HID-Project.h"
 
-int horzPin = A0;  // Analog output of horizontal joystick pin
-int vertPin = A1;  // Analog output of vertical joystick pin
+const int horzPin = A0;  // Analog output of horizontal joystick pin
+const int vertPin = A1;  // Analog output of vertical joystick pin
+const int y2pin   = A2;  // Second y axis, used for hat.
+
 int button1 = 9;  
 int button2 = 8;  
 
 int16_t x0, y0;  // Stores the initial value of each axis, usually around 512
+float x0f, y0f;  // scaled, linearized float values of center position
+
 int16_t x, y;    // Stores current analog output of each axis
 
 
 const int pinLed = LED_BUILTIN;
 const int pinButton = 9;
 
-int b1_flag = 1;
+const float Scale = 1023.0*55000; //1023 is the range of the ADC. 55000 is chosen for a nice range of output values.
+
 
 void setup() 
 {
@@ -64,6 +69,9 @@ void setup()
   delay(1000);  // short delay to let outputs settle
   y0 = analogRead(vertPin);  // get the initial values
   x0 = analogRead(horzPin);  // Joystick should be in neutral position when reading these
+ 
+  x0f = Scale/x0;
+  y0f = Scale/y0;
 
   pinMode(pinLed, OUTPUT);
   pinMode(pinButton, INPUT_PULLUP);
@@ -74,29 +82,54 @@ void setup()
 
 void loop() 
 {
-  const int HALF = 512;
-  y =   analogRead(vertPin) - y0 ;
-  x = - analogRead(horzPin) + x0 ;
-  
-  Serial.print(x);
-  Serial.print(" ");
-  Serial.print(y);
-  Serial.print("\n");
+
+  // Analog axes 
+  y =  analogRead(vertPin);
+  x =  analogRead(horzPin);
+
+  /* Simply return the raw ADC values, scaled.
+  y = y - y0;
+  x = x0 - x;
   
   Gamepad.xAxis(x<<7);
   Gamepad.yAxis(y<<7);
+  */
 
+  float xf =  Scale/x - x0f;  
+  float yf = -Scale/y + y0f;
+  
+  /*
+  Serial.print(x);
+  Serial.print(" ");
+  Serial.print(y);
+  Serial.print(" ");
+  Serial.print(xf);
+  Serial.print(" ");
+  Serial.print(yf);
+  Serial.print("\n"); */
+
+  Gamepad.xAxis((int)xf);
+  Gamepad.yAxis((int)yf);
+  
+  // Buttons
   uint32_t b=0;
   b |= !digitalRead(button1);
   b |= !digitalRead(button2) << 1;
   
   Gamepad.buttons(b);
   
-  Gamepad.write();
+  
+  // Hat. Some joystics encode the 4 switches with different analog values of y2.
+  uint8_t dpad1 = GAMEPAD_DPAD_CENTERED;
+  int hat = analogRead(y2pin);
+  Serial.print(hat);
+  Serial.print("\n");
+  
+  Gamepad.dPad1(dpad1); 
+    
+  Gamepad.write();  
   delay(5);
 
-
- 
   
   /*
   if (!digitalRead(pinButton)) {
