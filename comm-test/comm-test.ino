@@ -24,12 +24,13 @@ void processIncomingByte(char c)
       switch (c)
   {
   case 'V':
+ // Serial.write("V\n");
     RX_command = c;
     RX_i = 0;
     RX_sign = 1;
 
     for (int i = 0; i < N_AXES; i++)
-      RX_data[RX_i] = 0;
+      RX_data[i] = 0;
     break;
     
   case ',':
@@ -51,10 +52,10 @@ void processIncomingByte(char c)
     
     for (int i = 0; i < N_AXES; i++)
       {
-        Serial.write(RX_data[0]);
-        Serial.write(' ');
+        Serial.print(RX_data[i]);
+        Serial.print(' ');
       }
-    Serial.write('\n');
+    Serial.print('\n');
     
     break;
   case ' ':  // whitespace - ignore
@@ -79,6 +80,6 @@ void loop()
     processIncomingByte (Serial.read ());
 
   n++;
-  if (n % 1000 == 0)
-   Serial.write('*');
+//  if (n % 1000 == 0)
+//   Serial.write('*');
 }
