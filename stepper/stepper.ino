@@ -30,7 +30,7 @@
  */
 
                         // Step, Dir, En, Min, Max     
-const uint8_t mapPin[N_AXES][5] = {
+const int8_t mapPin[N_AXES][5] = {
   { 54,  55, 38,  3,  2},    // X
   { 60,  61, 56, 14, 15},    // Y
   { 26,  28, 24, -1, -1},    // R1
@@ -69,6 +69,7 @@ void setup()
       steppers[i].setAcceleration(a_max[i]);
       steppers[i].enableOutputs();                    // needed for the enable pin to take effect (?)
       RX_data[i] = 0;
+      steppers[i].setMaxSpeed(0);                     // needed to get correct speeds later, when set again
     }
   
   // pinMode(62, OUTPUT);
@@ -77,33 +78,106 @@ void setup()
   Serial.begin (115200);
 }
 
+/*
+ * for each axis, set the speed, then 
+ * move towards either the positive or negative limit for that axis
+ */
+void setSpeed(long int *V)
+{
+  for (int i = 0; i < N_AXES; i++)
+    {
+      long int v = V[i];
+      if (v > 0)
+	{
+	  steppers[i].setMaxSpeed(v);     // should be called before moveTo?
+	  steppers[i].moveTo(range[i]);
+	}
+      else
+	{
+	  steppers[i].setMaxSpeed(-v);   // set a positive speed
+	  steppers[i].moveTo(0);
+	}
+    }
+}
 
+/* Print received data for verification
+ *
+ */
+void printData()
+{
+  for (int i = 0; i < N_AXES; i++)
+    {
+      Serial.print(' ');
+      Serial.print(RX_data[i]);
+    }
+  Serial.print('\n');
+}
 
+/* Print the current position of all axes
+ */
+void reportPos()
+{
+  for (int i = 0; i < N_AXES; i++)
+    {
+      Serial.print(' ');
+      Serial.print(steppers[i].currentPosition());
+    }
+  Serial.print('\n');
+}
+
+/* Stop all motors as fast as possible, without loosing position
+ */
+void stop()
+{
+  for (int i = 0; i < N_AXES; i++)
+    steppers[i].stop();
+}
+
+/*
+ * Receive a message in the following format
+ *
+ * V -100, 23, -45,13
+ * ignore whitespace
+ * numbers separated by ','
+ * optional - sign at start of number
+ *
+ * currently: lazy parsing: accept '-' anywhere in the number
+ * no error reporting
+ * 
+ *  
+ * Commands:
+ * V  - set velocities. up to 4 arguments.
+ *
+ * TODO: if an error is detected, don't execute the command
+ */
 void processIncomingByte(char c)
 {
   if (isdigit (c))
     {
       RX_data[RX_i] *= 10;
       RX_data[RX_i] += c - '0';
-    }  // end of digit
+    } 
   else 
     {
       // set the new state, if we recognize it
       switch (c)
 	{
+	case 'S':
+	case 'W':
 	case 'V':
+	  // Serial.write("V\n");
 	  RX_command = c;
 	  RX_i = 0;
 	  RX_sign = 1;
-
+	  
 	  for (int i = 0; i < N_AXES; i++)
-	    RX_data[RX_i] = 0;
+	    RX_data[i] = 0;
 	  break;
 	  
 	case ',':
 	  RX_data[RX_i] *= RX_sign;
 	  RX_sign = 1;
-
+	  
 	  if (RX_i < N_AXES-1)
 	    RX_i++;
 	  
@@ -117,12 +191,24 @@ void processIncomingByte(char c)
 	case '\n':  //newline !
 	  RX_data[RX_i] *= RX_sign;
 	  
-	  for (int i = 0; i < N_AXES; i++)
+	  Serial.print(RX_command);
+
+	  switch(RX_command)
 	    {
-	      Serial.write(RX_data[0]);
-	      Serial.write(' ');
+	    case 'W':
+	      reportPos();
+	      break;
+	    case 'V':
+	      setSpeed(RX_data);
+	      printData();
+	      break;
+	    case 'S':
+	      stop();
+	    default:
+	      
+	      break;        
 	    }
-	  Serial.write('\n');
+  RX_command = '\0'; //prevent the same command from being run again by a repeated newline          
 	  
 	  break;
 	case ' ':  // whitespace - ignore
@@ -135,7 +221,6 @@ void processIncomingByte(char c)
 	  break;
 	} 
     } 
-  
 }
 
 
@@ -147,8 +232,8 @@ void loop()
     processIncomingByte (Serial.read ());
 
 n++;
-if (n % 1000 == 0)
- Serial.write('*');
+//if (n % 1000 == 0)
+// Serial.write('*');
 
   steppers[0].run();
   steppers[1].run();

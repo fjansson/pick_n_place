@@ -11,6 +11,22 @@ void setup() {
 Serial.begin (115200);
 }
 
+/*
+ * Receive a message in the following format
+ *
+ * V -100, 23, -45,13
+ * ignore whitespace
+ * numbers separated by ','
+ * optional - sign at start of number
+ *
+ * currently: lazy parsing: accept '-' anywhere in the number
+ * no error reporting
+ * 
+ *  
+ * Commands:
+ * V  - set velocities. up to 4 arguments.
+ *
+ */
 void processIncomingByte(char c)
 {
   if (isdigit (c))
