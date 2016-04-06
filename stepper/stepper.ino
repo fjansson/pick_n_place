@@ -4,6 +4,8 @@
  * Fredrik Jansson 2016
  */
 
+
+
 #include <MultiStepper.h>
 #include <AccelStepper.h>
 
@@ -33,15 +35,16 @@
 const int8_t mapPin[N_AXES][5] = {
   { 54,  55, 38,  3,  2},    // X
   { 60,  61, 56, 14, 15},    // Y
+  { 46,  48, 62, 18, 19},    // Z 
   { 26,  28, 24, -1, -1},    // R1
-  { 36,  34, 30, -1, -1},    // R2
-//{ 46,  48, 62, 18, 19},    // Z  -- not used ATM?
+  //{ 36,  34, 30, -1, -1},    // R2
 };
 
 
 // parameters for each axis: range(steps), max speed, max acceleration
-long int range[N_AXES] = {1000, 1000,  200,  200};
-float a_max[N_AXES]    = { 400,  400,  400,  400};
+//long int range[N_AXES] = {1000, 1000,  200,  200};
+long int range[N_AXES] = {200*32*3.3, 200*32*3.3,  10000,  10000};
+float a_max[N_AXES]    = { 4000,  4000,  4000,  4000};
 float v_max[N_AXES]    = { 200,  200,  200,  200};
 
 
@@ -67,13 +70,16 @@ void setup()
       steppers[i].setEnablePin(mapPin[i][ENABLE]);
       steppers[i].setPinsInverted(false,false,true);  // enable pin is active low
       steppers[i].setAcceleration(a_max[i]);
-      steppers[i].enableOutputs();                    // needed for the enable pin to take effect (?)
       RX_data[i] = 0;
       steppers[i].setMaxSpeed(0);                     // needed to get correct speeds later, when set again
+      steppers[i].enableOutputs();                    // needed for the enable pin to take effect (?)
     }
   
-  // pinMode(62, OUTPUT);
-  // digitalWrite(62, HIGH);
+//   pinMode(62, OUTPUT);
+//   digitalWrite(62, HIGH);
+ //pinMode(38, OUTPUT);
+ //digitalWrite(38, HIGH);
+
 
   Serial.begin (115200);
 }
