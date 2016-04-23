@@ -197,7 +197,7 @@ void processIncomingByte(char c)
 	case '\n':  //newline !
 	  RX_data[RX_i] *= RX_sign;
 	  
-	  Serial.print(RX_command);
+	  //Serial.print(RX_command);
 
 	  switch(RX_command)
 	    {
@@ -206,7 +206,7 @@ void processIncomingByte(char c)
 	      break;
 	    case 'V':
 	      setSpeed(RX_data);
-	      printData();
+	      //printData();
 	      break;
 	    case 'S':
 	      stop();
