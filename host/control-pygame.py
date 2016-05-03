@@ -21,8 +21,9 @@ def quit():
 pygame.init()
 #pygame.joystick.init()
 
-size = (320,200)
-#screen = pygame.display.set_mode(size)
+#size = (320,200)
+size = (1,1)
+screen = pygame.display.set_mode(size)
 
 
 conf = {
@@ -34,14 +35,15 @@ conf = {
     'axis_x' : 0,
     'axis_y': 1,
     'axis_deadzone' : 0.01,
-    'Vx_max': 500,
-    'Vy_max': 500,
-    'Vz_max': 200,
-    'Vr_max': 200,
-    'serial_port': '/dev/cu.usbmodem1411',
+    'Vx_max': 2000,
+    'Vy_max': 2000,
+    'Vz_max': 2000,
+    'Vr_max': 2000,
+    'serial_port': '/dev/ttyACM0',
+#    'serial_port': '/dev/cu.usbmodem1411',
 }
 
-serial_port = serial.Serial(conf['serial_port']) # , baud, timeout=0)
+serial_port = serial.Serial(conf['serial_port'], 115200) # , baud, timeout=0)
 
 # print info about joysticks in the system 
 joystick_count = pygame.joystick.get_count()
@@ -87,7 +89,7 @@ def read_from_port(ser):
         handle_data(data)
 
 # start a thread for reading from the serial port    
-RXthread = threading.Thread(target=read_from_port, args=(serial_port,), daemon=True)
+RXthread = threading.Thread(target=read_from_port, args=(serial_port,)) #, daemon=True)
 # daemon=True makes this thread quit when the main thread quits
 RXthread.start()
 
@@ -101,7 +103,7 @@ while 1:
         print (val, end=' ')
     print('',end='\r')
     """
-    print ('Raw stick pos', joystick.get_axis(conf['axis_x']) , joystick.get_axis(conf['axis_y']) )
+#    print ('Raw stick pos', joystick.get_axis(conf['axis_x']) , joystick.get_axis(conf['axis_y']) )
     jx = joystick.get_axis(conf['axis_x'])
     jy = joystick.get_axis(conf['axis_y'])
 
