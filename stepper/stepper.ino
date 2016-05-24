@@ -44,9 +44,9 @@ const int8_t mapPin[N_AXES][5] = {
 // parameters for each axis: range(steps), max speed, max acceleration
 //long int range[N_AXES] = {1000, 1000,  200,  200};
 //long int range[N_AXES] = {200*32*3.3, 200*32*3.3,  10000,  10000};
-long int range[N_AXES] = {20000,  20000, 200*32*3.3*5, 200*32*3.3*5};
+long int range[N_AXES] = {30000,  30000, 200*32*3.3*5, 200*32*3.3*5};
 float a_max[N_AXES]    = { 4000,  4000,  4000,  4000};
-float v_max[N_AXES]    = { 2000,  2000,  2000,  2000};
+float v_max[N_AXES]    = { 2000,  2000,  3000,  2000};
 
 
 AccelStepper steppers[] = {
@@ -83,6 +83,8 @@ void setup()
 
 
   Serial.begin (115200);
+//    Serial.begin (38400);
+
 }
 
 /*

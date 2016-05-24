@@ -11,6 +11,7 @@ import pygame
 import sys
 import serial
 import threading
+import argparse
 
 def quit():
     setSpeed(0,0,0,0)
@@ -37,13 +38,33 @@ conf = {
     'axis_deadzone' : 0.01,
     'Vx_max': 2000,
     'Vy_max': 2000,
-    'Vz_max': 2000,
+    'Vz_max': 3000,
     'Vr_max': 2000,
     'serial_port': '/dev/ttyACM0',
+    'serial_speed': 115200
 #    'serial_port': '/dev/cu.usbmodem1411',
 }
 
-serial_port = serial.Serial(conf['serial_port'], 115200) # , baud, timeout=0)
+
+# command line arguments, will add as needed
+parser = argparse.ArgumentParser(description='Pick and place!')
+parser.add_argument('--serial_port', metavar='port', type=str, required=False, help='serial port to use')
+
+args = parser.parse_args()
+
+# options given on the command line override values in conf 
+vargs = vars(args)
+print (args)
+for key in vargs.keys():
+    print (key)
+    if vargs[key]:
+        if key in conf:
+            conf[key] = vargs[key]
+
+
+
+
+serial_port = serial.Serial(conf['serial_port'], conf['serial_speed'])
 
 # print info about joysticks in the system 
 joystick_count = pygame.joystick.get_count()
@@ -57,7 +78,6 @@ for i in range(joystick_count):
     hats = joystick.get_numhats()
     print ("Joystick %d - %s, axes: %d, buttons: %d, hats: %d"%(i, name, axes, buttons, hats) )
     sticks.append(joystick)
-
 
 if joystick_count == 0:        
     print ("No joysticks found.")
@@ -79,6 +99,7 @@ def setSpeed(x,y,z,r):
     send('V%d,%d,%d,%d'%(x,y,z,r))
 
 
+# receiving serial data with a separate thread #
 def handle_data(data):
     print('RX:' + data.rstrip())
 
@@ -89,11 +110,12 @@ def read_from_port(ser):
         handle_data(data)
 
 # start a thread for reading from the serial port    
-RXthread = threading.Thread(target=read_from_port, args=(serial_port,)) #, daemon=True)
+RXthread = threading.Thread(target=read_from_port, args=(serial_port,), daemon=True)
 # daemon=True makes this thread quit when the main thread quits
 RXthread.start()
 
 
+# main loop - get stick position, send speed to arduino 
 while 1:
     """for i in range(axes):
         val = joystick.get_axis(i)
@@ -107,6 +129,7 @@ while 1:
     jx = joystick.get_axis(conf['axis_x'])
     jy = joystick.get_axis(conf['axis_y'])
 
+    # deadzone - small joystick readings -> 0 to avoid slow drift when idle
     if abs(jx) < conf['axis_deadzone']:
         jx = 0
     if abs(jy) < conf['axis_deadzone']:
@@ -122,12 +145,12 @@ while 1:
     # set the speed
     # note: rotation and z are dependent. The connection is made here.
     # to rotate at constant height, set both Z and rotation speed to the same value
+    # TODO: the axis limits interact in a stupid way
     setSpeed(Vx,Vy,Vz+Vr,Vr) 
     send('W')
     if joystick.get_button(conf['button_stop']):
         quit()
         
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
