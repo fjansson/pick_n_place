@@ -3,7 +3,7 @@
 """
 " Joystick control for pick-and-place machine
 " Fredrik Jansson 2016
-"
+" fjansson at abo point fi
 "
 """
 
@@ -33,6 +33,7 @@ conf = {
     'button_up': 2,
     'button_left': 3,
     'button_right': 4,
+    'button_pickup' : 0,
     'axis_x' : 0,
     'axis_y': 1,
     'axis_deadzone' : 0.01,
@@ -94,7 +95,7 @@ def send(s):
     serial_port.write((s+'\n').encode())
     
 def setSpeed(x,y,z,r):
-    # TODO round to closest int here to avoid 0 becoming -1
+    # round to closest int here to avoid 0 becoming -1
     x,y,z,r = round(x),round(y),round(z),round(r)    
     send('V%d,%d,%d,%d'%(x,y,z,r))
 
@@ -114,6 +115,7 @@ RXthread = threading.Thread(target=read_from_port, args=(serial_port,), daemon=T
 # daemon=True makes this thread quit when the main thread quits
 RXthread.start()
 
+pickup_active = False
 
 # main loop - get stick position, send speed to arduino 
 while 1:
@@ -156,8 +158,15 @@ while 1:
             quit()
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
             quit()
-                
-                                
+        if event.type == pygame.JOYBUTTONDOWN:
+            if event.button == conf['button_pickup']:
+                pickup_active = not pickup_active
+                print ('pickup_active:', pickup_active)
+                if pickup_active:
+                    send('P')
+                else:
+                    send('p')
+                    
     key = pygame.key.get_pressed()
     if key[pygame.K_ESCAPE]:
         print('esc')
