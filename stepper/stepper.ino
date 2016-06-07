@@ -24,12 +24,15 @@
 #define MAX 4
 
 #define LED_PIN 13
+#define PUMP_PIN 9 // D9 and D10 control the output transistors. D8 too, but for the other +12V supply
+
 
 #define N_AXES 4
 
 /* Note: change R1 to Z to get endstop pins ?
  *
  */
+
 
                         // Step, Dir, En, Min, Max     
 const int8_t mapPin[N_AXES][5] = {
@@ -42,11 +45,12 @@ const int8_t mapPin[N_AXES][5] = {
 
 
 // parameters for each axis: range(steps), max speed, max acceleration
+// axis order: X, Y, Z, R
 //long int range[N_AXES] = {1000, 1000,  200,  200};
 //long int range[N_AXES] = {200*32*3.3, 200*32*3.3,  10000,  10000};
 long int range[N_AXES] = {30000,  30000, 200*32*3.3*5, 200*32*3.3*5};
 float a_max[N_AXES]    = { 4000,  4000,  4000,  4000};
-float v_max[N_AXES]    = { 2000,  2000,  3000,  2000};
+float v_max[N_AXES]    = { 2000,  2000,  4000,  2000};
 
 
 AccelStepper steppers[] = {
@@ -61,10 +65,33 @@ long RX_data[N_AXES];
 short int RX_sign;
 char RX_command = '\0';
 
+/* Set pump state:
+ * p = 0 : off
+ * p = 1 : on 
+ */
+void set_pump(int p)
+{
+  //digitalWrite(LED_PIN, p?HIGH:LOW);  
+  digitalWrite(PUMP_PIN, p?HIGH:LOW);  
+}
+
+void set_motor_power(int p)
+{
+  int i;
+  for (i = 0; i < N_AXES; i++)
+    {
+      if (p)
+        steppers[i].enableOutputs(); 
+      else
+        steppers[i].disableOutputs();
+    }
+}
+
 void setup()
 {
   pinMode(LED_PIN, OUTPUT);
-
+  pinMode(PUMP_PIN, OUTPUT);
+ 
   int i;
   for (i = 0; i < N_AXES; i++)
     {
@@ -171,6 +198,10 @@ void processIncomingByte(char c)
       // set the new state, if we recognize it
       switch (c)
 	{
+        case 'p':
+        case 'P':
+        case 'm':
+        case 'M':
 	case 'S':
 	case 'W':
 	case 'V':
@@ -213,6 +244,22 @@ void processIncomingByte(char c)
 	      break;
 	    case 'S':
 	      stop();
+              set_pump(0);
+              break;
+            case 'P': // pick
+              set_pump(1);
+            break;
+            case 'p': // place
+              set_pump(0);
+            break;
+            case 'm':  // motors off
+              stop();
+              delay(100); // do we need this?
+              set_motor_power(0);
+            break;    
+            case 'M': // motors on
+              set_motor_power(1);
+            break;
 	    default:
 	      
 	      break;        

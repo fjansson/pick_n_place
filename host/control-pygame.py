@@ -28,12 +28,14 @@ screen = pygame.display.set_mode(size)
 
 
 conf = {
-    'button_stop':  5,
-    'button_down': 1,
-    'button_up': 2,
-    'button_left': 3,
-    'button_right': 4,
-    'button_pickup' : 0,
+    'button_stop'  : 5,  # note: number printed on button is index+1
+    'button_down'  : 1,
+    'button_up'    : 2,
+    'button_left'  : 3,
+    'button_right' : 4,
+    'button_pickup': 0,
+    'button_motors_off': 9,
+    'button_motors_on' : 10,
     'axis_x' : 0,
     'axis_y': 1,
     'axis_deadzone' : 0.01,
@@ -137,8 +139,8 @@ while 1:
     if abs(jy) < conf['axis_deadzone']:
         jy = 0
     
-    Vx  =  jx * conf['Vx_max']
-    Vy  =  jy * conf['Vy_max']
+    Vx  =    jx * conf['Vx_max']
+    Vy  =  - jy * conf['Vy_max']  # minus here to flip the y axis 
     Vz  = (joystick.get_button(conf['button_up'])     * conf['Vz_max']
          - joystick.get_button(conf['button_down'])   * conf['Vz_max'])
     Vr =  (joystick.get_button(conf['button_left'])   * conf['Vr_max']
@@ -166,6 +168,10 @@ while 1:
                     send('P')
                 else:
                     send('p')
+            if event.button == conf['button_motors_off']:
+                send('m')
+            if event.button == conf['button_motors_on']:
+                send('M')
                     
     key = pygame.key.get_pressed()
     if key[pygame.K_ESCAPE]:
