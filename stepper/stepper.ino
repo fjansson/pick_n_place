@@ -289,7 +289,9 @@ void loop()
 
 n++;
 //if (n % 1000 == 0)
-// Serial.write('*');
+ //Serial.write('*');
+  
+ digitalWrite(LED_PIN, n>>12 & 1);
 
   steppers[0].run();
   steppers[1].run();

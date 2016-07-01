@@ -12,6 +12,7 @@ import sys
 import serial
 import threading
 import argparse
+from time import sleep
 
 def quit():
     setSpeed(0,0,0,0)
@@ -28,6 +29,7 @@ screen = pygame.display.set_mode(size)
 
 
 conf = {
+    'joystick_ID'  : 0,  # which joystick to use
     'button_stop'  : 5,  # note: number printed on button is index+1
     'button_down'  : 1,
     'button_up'    : 2,
@@ -49,9 +51,13 @@ conf = {
 }
 
 
+conf['axis_x'] = 2 # for Dragonrise gamepad / GameStop
+conf['axis_y'] = 3
+
 # command line arguments, will add as needed
 parser = argparse.ArgumentParser(description='Pick and place!')
 parser.add_argument('--serial_port', metavar='port', type=str, required=False, help='serial port to use')
+parser.add_argument('--joystick_ID', metavar='id',  type=int, required=False,  help='joystick to use, default 0')
 
 args = parser.parse_args()
 
@@ -65,9 +71,20 @@ for key in vargs.keys():
             conf[key] = vargs[key]
 
 
+# open the serial connection and reset the arduino
+# http://stackoverflow.com/questions/21073086/wait-on-arduino-auto-reset-using-pyserial
+#serial_port = serial.Serial(conf['serial_port']) # dummy connection to receive all the watchdog gibberish (unplug + replug) and properly reset the arduino
+#with serial_port: # the reset part is actually optional but the sleep is nice to have either way.
+    #serial_port.setDTR(False)
+#    sleep(3)
+#    serial_port.flushInput()
+    #serial_port.setDTR(True)
 
-
+# reopen the serial, but this time with proper baudrate. This is the correct and working connection.
 serial_port = serial.Serial(conf['serial_port'], conf['serial_speed'])
+sleep(1) # sleep here, after initializeing serial connection. Otherwise the arduino gets stuck
+         # theory: opening the connection resets the board (DTR line). If data is transmitted too fast
+         # after this, it stays in bootloader mode.
 
 # print info about joysticks in the system 
 joystick_count = pygame.joystick.get_count()
@@ -87,7 +104,7 @@ if joystick_count == 0:
     sys.exit(1)
     
 # Select one of the joysticks somehow. For now, take the first
-joystick = sticks[0]
+joystick = sticks[conf['joystick_ID']]
 axes = joystick.get_numaxes()
 buttons = joystick.get_numbuttons()
 
