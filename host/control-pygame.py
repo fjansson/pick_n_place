@@ -14,6 +14,26 @@ import threading
 import argparse
 from time import sleep
 
+try:
+    from picamera import PiCamera
+    camera = PiCamera()
+    camera.resolution = (1024, 768)
+    camera.start_preview()
+    camera.rotation=270                   # sadly only multiples of 90 degrees work 
+    camera.preview.fullscreen = False     # must set this for the window pos to be respected
+    camera.preview.window=(10,20,500,500) # could move this around at runtime - find pygame window coordinates?
+                                          # the actual image is smaller to keep the aspect ratio
+                                          # the picture is scaled to fit - not cropped
+                                          
+    #camera.zoom=(.3,.3,.3,.3)            # (x,y,width,height) as floats btw 0,1 
+    #camera.preview.resolution=(300,300)
+    #camera.preview.alpha = 192
+except:
+    print("Camera didn't start :(")
+
+#TODO switch to fullscreen mode with button F5 or F11\
+
+    
 def quit():
     setSpeed(0,0,0,0)
     pygame.quit()
@@ -23,10 +43,10 @@ def quit():
 pygame.init()
 #pygame.joystick.init()
 
-#size = (320,200)
-size = (1,1)
-screen = pygame.display.set_mode(size)
 
+size = (1,1)
+#size = (500,500)
+screen = pygame.display.set_mode(size)
 
 conf = {
     'joystick_ID'  : 0,  # which joystick to use
@@ -138,17 +158,11 @@ RXthread = threading.Thread(target=read_from_port, args=(serial_port,), daemon=T
 RXthread.start()
 
 pickup_active = False
+zoom_active = False
 
 # main loop - get stick position, send speed to arduino 
 while 1:
-    """for i in range(axes):
-        val = joystick.get_axis(i)
-        print ('% 5.3f'%val, end=' ')
-    for i in range(buttons):
-        val = joystick.get_button(i)
-        print (val, end=' ')
-    print('',end='\r')
-    """
+
 #    print ('Raw stick pos', joystick.get_axis(conf['axis_x']) , joystick.get_axis(conf['axis_y']) )
     jx = joystick.get_axis(conf['axis_x'])
     jy = joystick.get_axis(conf['axis_y'])
@@ -178,8 +192,17 @@ while 1:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             quit()
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            quit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                quit()
+            if event.key == pygame.K_F11:
+                camera.preview.fullscreen = not camera.preview.fullscreen
+            if event.key == pygame.K_F12:
+                zoom_active = not zoom_active
+                if zoom_active:
+                    camera.zoom=(.33,.33,.33,.33)
+                else:
+                    camera.zoom=(0.0,0.0,1.0,1.0)
         if event.type == pygame.JOYBUTTONDOWN:
             if event.button == conf['button_pickup']:
                 pickup_active = not pickup_active
