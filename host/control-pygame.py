@@ -46,13 +46,14 @@ conf = {
     'Vz_max': 3000,
     'Vr_max': 2000,
     'serial_port': '/dev/ttyACM0',
-    'serial_speed': 115200
-#    'serial_port': '/dev/cu.usbmodem1411',
+    'serial_speed': 115200,
+    'print_comm' : False,       
+    #    'serial_port': '/dev/cu.usbmodem1411',
 }
 
 
-conf['axis_x'] = 2 # for Dragonrise gamepad / GameStop
-conf['axis_y'] = 3
+#conf['axis_x'] = 2 # for Dragonrise gamepad / GameStop
+#conf['axis_y'] = 3
 
 # command line arguments, will add as needed
 parser = argparse.ArgumentParser(description='Pick and place!')
@@ -71,16 +72,10 @@ for key in vargs.keys():
             conf[key] = vargs[key]
 
 
-# open the serial connection and reset the arduino
-# http://stackoverflow.com/questions/21073086/wait-on-arduino-auto-reset-using-pyserial
-#serial_port = serial.Serial(conf['serial_port']) # dummy connection to receive all the watchdog gibberish (unplug + replug) and properly reset the arduino
-#with serial_port: # the reset part is actually optional but the sleep is nice to have either way.
+
     #serial_port.setDTR(False)
-#    sleep(3)
-#    serial_port.flushInput()
     #serial_port.setDTR(True)
 
-# reopen the serial, but this time with proper baudrate. This is the correct and working connection.
 serial_port = serial.Serial(conf['serial_port'], conf['serial_speed'])
 sleep(1) # sleep here, after initializeing serial connection. Otherwise the arduino gets stuck
          # theory: opening the connection resets the board (DTR line). If data is transmitted too fast
@@ -110,7 +105,8 @@ buttons = joystick.get_numbuttons()
 
 
 def send(s):
-    print('TX:' + s)
+    if conf['print_comm']:
+        print('TX:' + s)
     serial_port.write((s+'\n').encode())
     
 def setSpeed(x,y,z,r):
@@ -120,9 +116,16 @@ def setSpeed(x,y,z,r):
 
 
 # receiving serial data with a separate thread #
+position = [0,0,0,0]
 def handle_data(data):
-    print('RX:' + data.rstrip())
-
+    if conf['print_comm']:
+        print('RX:' + data.rstrip())
+    for i,d in enumerate(data.split()):
+        if i >= 4:
+            break
+        position[i] = int(d)
+        
+    
 # read data from the serial port. Run as a separate thread.
 def read_from_port(ser):
     while True:
@@ -196,7 +199,7 @@ while 1:
         
     #pygame.display.flip()
     pygame.event.pump()
-    pygame.time.delay(100)
-
+    pygame.time.delay(50)
+    print('% 5d % 5d % 5d % 5d'%tuple(position), end='\r')
 
     
