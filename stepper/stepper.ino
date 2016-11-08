@@ -76,7 +76,7 @@ int8_t read_endstop(int8_t axis, int8_t minmax)
 /* Read 3 endstops. Pack the results in a byte:
  * 00ZzYyXx   where X is the max stop and x is the min stop
  */
-void print_endstops()
+uint8_t print_endstops()
 {
   uint8_t i;
   uint8_t mask = 1;
@@ -86,19 +86,21 @@ void print_endstops()
     if (read_endstop(i, 0))
       {
         stops |= mask;
-        Serial.print(i);
-        Serial.print("- ");
+        //Serial.print(i);
+        //Serial.print('-');
       }
     mask <<=1;
     if (read_endstop(i, 1))
       {
       stops |= mask;
-      Serial.print(i);
-      Serial.print("+ ");
+      //Serial.print(i);
+      //Serial.print('+');
       }
     mask <<=1;    
   }
-  Serial.print(" stops.\n");
+  //Serial.print(" stops.");
+  Serial.print(stops);
+  Serial.print('\n');
   return stops;
 }
   
@@ -133,7 +135,7 @@ void setup()
 {
   pinMode(LED_PIN, OUTPUT);
   pinMode(PUMP_PIN, OUTPUT);
- pinMode(mapPin[0][3], INPUT_PULLUP);
+ 
  
   int i;
   for (i = 0; i < N_AXES; i++)
@@ -144,6 +146,10 @@ void setup()
       RX_data[i] = 0;
       steppers[i].setMaxSpeed(0);                     // needed to get correct speeds later, when set again
       steppers[i].enableOutputs();                    // needed for the enable pin to take effect (?)
+
+      // endstop pins as inputs with pullup
+      pinMode(mapPin[i][MIN], INPUT_PULLUP);
+      pinMode(mapPin[i][MAX], INPUT_PULLUP);
     }
   
 //   pinMode(62, OUTPUT);
@@ -239,15 +245,17 @@ void processIncomingByte(char c)
   else 
     {
       // set the new state, if we recognize it
+      // New commands must be defined HERE AND BELOW
       switch (c)
 	{
-        case 'p':
+        case 'p':  
         case 'P':
         case 'm':
         case 'M':
 	case 'S':
 	case 'W':
 	case 'V':
+        case 'E':
 	  // Serial.write("V\n");
 	  RX_command = c;
 	  RX_i = 0;
@@ -280,6 +288,7 @@ void processIncomingByte(char c)
 	    {
 	    case 'W':
 	      reportPos();
+              //print_endstops();
 	      break;
 	    case 'V':
 	      setSpeed(RX_data);
@@ -338,7 +347,7 @@ n++;
  //Serial.write('*');
   
  //digitalWrite(LED_PIN, n>>12 & 1);
-  digitalWrite(LED_PIN, read_endstop(0, 0));  
+  digitalWrite(LED_PIN, read_endstop(1, 0));  
 
   steppers[0].run();
   steppers[1].run();
