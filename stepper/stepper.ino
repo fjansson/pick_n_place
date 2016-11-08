@@ -59,6 +59,48 @@ AccelStepper steppers[] = {
   AccelStepper (AccelStepper::DRIVER, mapPin[2][STEP], mapPin[2][DIR]),
   AccelStepper (AccelStepper::DRIVER, mapPin[3][STEP], mapPin[3][DIR])
 };
+
+/*
+Read one end stop, for the specified axis.
+if minmax == 0, return the min endstop, otherwise the max endstop.
+*/
+int8_t read_endstop(int8_t axis, int8_t minmax)
+{
+  int8_t i = 3;
+  if (minmax)
+    i = 4;
+  int8_t pin = mapPin[axis][i];
+  return digitalRead(pin);
+}
+
+/* Read 3 endstops. Pack the results in a byte:
+ * 00ZzYyXx   where X is the max stop and x is the min stop
+ */
+void print_endstops()
+{
+  uint8_t i;
+  uint8_t mask = 1;
+  uint8_t stops = 0;
+  for (i = 0; i < 3; i++)
+  {
+    if (read_endstop(i, 0))
+      {
+        stops |= mask;
+        Serial.print(i);
+        Serial.print("- ");
+      }
+    mask <<=1;
+    if (read_endstop(i, 1))
+      {
+      stops |= mask;
+      Serial.print(i);
+      Serial.print("+ ");
+      }
+    mask <<=1;    
+  }
+  Serial.print(" stops.\n");
+  return stops;
+}
   
 int RX_i = 0;
 long RX_data[N_AXES];
@@ -91,6 +133,7 @@ void setup()
 {
   pinMode(LED_PIN, OUTPUT);
   pinMode(PUMP_PIN, OUTPUT);
+ pinMode(mapPin[0][3], INPUT_PULLUP);
  
   int i;
   for (i = 0; i < N_AXES; i++)
@@ -260,6 +303,9 @@ void processIncomingByte(char c)
             case 'M': // motors on
               set_motor_power(1);
             break;
+            case 'E':
+              print_endstops();
+              break;
 	    default:
 	      
 	      break;        
@@ -291,7 +337,8 @@ n++;
 //if (n % 1000 == 0)
  //Serial.write('*');
   
- digitalWrite(LED_PIN, n>>12 & 1);
+ //digitalWrite(LED_PIN, n>>12 & 1);
+  digitalWrite(LED_PIN, read_endstop(0, 0));  
 
   steppers[0].run();
   steppers[1].run();

@@ -67,7 +67,7 @@ conf = {
     'Vr_max': 2000,
     'serial_port': '/dev/ttyACM0',
     'serial_speed': 115200,
-    'print_comm' : False,       
+    'print_comm' : True,       
     #    'serial_port': '/dev/cu.usbmodem1411',
 }
 
@@ -185,7 +185,7 @@ while 1:
     # to rotate at constant height, set both Z and rotation speed to the same value
     # TODO: the axis limits interact in a stupid way
     setSpeed(Vx,Vy,Vz+Vr,Vr) 
-    send('W')
+    send('E')
     if joystick.get_button(conf['button_stop']):
         quit()
         
